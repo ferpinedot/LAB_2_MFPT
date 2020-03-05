@@ -6,13 +6,13 @@
 # -- repositorio: https://github.com/ferpinedot/LAB_2_MFPT
 # -- ------------------------------------------------------------------------------------ -- #
 
-import funciones as fn
+import func as fn
 
 #datos de entrada
 datos = fn.f_leer_archivo(param_archivo='archivo_mt4.xlsx')
 
 #
-df_data = fn.f_columnas_tiempos(df_data)
+df_data = fn.f_columnas_tiempos(param_data = df_data)
 
 #param_ins='usdjpy'
 #fn.f_pip_size(param_ins)
