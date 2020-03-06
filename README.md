@@ -2,11 +2,6 @@
 Behavioral Finance
 
 
-Dar una introducción general de lo que es el proyecto (2-4 renglones).
-Incluir información de qué eres estudiante de la carrera de IF en la universidad ITESO
-Describir la estructura general de archivos en el proyecto, nombre de cada uno y su función dentro del proyecto.
-Tu información de contacto para dudas, preguntas y sugerencias. (puedes dejar sólo el correo de ITESO).
-
 Este proyecto consiste principalmente en elaborar herramientas para el análisis del desempeño de la actividad de trading tanto por parte de la misma cuenta, dándose a entender de los movimientos de ésta, como del comportamiento del trader que la opera.
 Consiste en 4 partes o etapas, siendo la primera la estructura básica de la misma, la cual está compuesta por 8 elementos:
 1. Archivos: El primero es una carpeta que contiene un libro de excel donde está descargada la información de los movimientos que se hicieron en la cuenta específica a analizar (aunque este elemento no será subido a github). 
@@ -25,10 +20,9 @@ En la Tercera Parte se calcularán las medidas de atribución al desempeño de l
 En la Cuarta Parte se propone, diseña y calcula una función para obtener evidencia sobre la presencia de sesgos cognitivos del trader con una función.
 
 
-
 Cualquier duda o sugerencia no duden en comunicarse:
 
-Fernanda Pinedo Talango
-Ingeniería Financiera
-ITESO
+Fernanda Pinedo Talango.
+Ingeniería Financiera.
+ITESO.
 correo: if705971@iteso.mx
