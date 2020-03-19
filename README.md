@@ -4,7 +4,7 @@ Behavioral Finance
 
 Este proyecto consiste principalmente en elaborar herramientas para el análisis del desempeño de la actividad de trading tanto por parte de la misma cuenta, dándose a entender de los movimientos de ésta, como del comportamiento del trader que la opera.
 Consiste en 4 partes o etapas, siendo la primera la estructura básica de la misma, la cual está compuesta por 8 elementos:
-### 1. Archivos: 
+#### 1. Archivos: 
 El primero es una carpeta que contiene un libro de excel donde está descargada la información de los movimientos que se hicieron en la cuenta específica a analizar (aunque este elemento no será subido a github). 
 2. Datos: El segundo elemento es un formato script de python 3.5 llamado "datos.py" la cual contiene las variables y los procesos a descargar y cargar datos.
 3. Funciones: Formato script de python 3.5 el cual como su nombre lo dice, se trata de la lista de funciones con atributos para el procesamiento de datos con docstring
