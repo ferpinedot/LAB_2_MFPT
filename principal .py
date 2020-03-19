@@ -13,21 +13,20 @@ Created on Thu Mar  5 17:52:29 2020
 # -- repositorio: https://github.com/ferpinedot/LAB_2_MFPT
 # -- ------------------------------------------------------------------------------------ -- #
 
-import func as fn
+import funciones as fn
 
 #datos de entrada
 #data_arch = 'archivo_mt4.xlsx'
-data_arch = 'archivo_ejemplo.xlsx'
+param_archivo = 'archivo_tradeview_1.xlsx'
 
-datos = fn.f_leer_archivo(data_arch)
+datos = fn.f_leer_archivo('archivo_tradeview_1.xlsx')
 
+#cols = fn.f_columnas_tiempos(datos)
 fn.f_columnas_tiempos(datos)
 fn.f_columnas_pips(datos)
-stats = fn.f_stats_basic(datos)
+stats = fn.f_basic_stats(datos)
 
 #%%
-
-
 
 #
 #df_data = fn.f_columnas_tiempos(param_data = df_data)
