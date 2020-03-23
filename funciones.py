@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -- coding: utf-8 --
 """
 Created on Thu Mar  5 17:52:47 2020
 
@@ -16,12 +16,15 @@ Created on Thu Mar  5 17:52:47 2020
 import pandas as pd
 import numpy as np
 
+
 # -- --------------------------------------------------- FUNCION: Leer archivo de entrada -- #
 # -- ------------------------------------------------------------------------------------ -- #
-# --
-#%% 
 
-def f_leer_archivo(param_archivo):
+#%% Parte 2: Mediciones estadísticas básicas
+#%%
+# Lectura del archivo de datos en excel o csv
+
+def f_leer_archivo(param_archivo, sheet_name = 0):
     """
     Parameters
     ----------
@@ -29,41 +32,38 @@ def f_leer_archivo(param_archivo):
     Returns
     -------
     df_data : pd.DataFrame : con informacion contenida en archivo leido
+    
     Debugging
     ---------
-    #param_archivo = 'archivo_mt4.xlsx'
     param_archivo = 'archivo_tradeview_1.xlsx'
     """
 
-    df_data = pd.read_excel('archivos/' + param_archivo, sheet_name='Hoja1')
-    #df_data = pd.read_excel('archivos/' + param_archivo)
-
-    # Convertir nombre de columnas en minusculas
-    df_data.columns = [df_data.columns[i].lower() for i in range(len(df_data.columns))]
-
-    # Asegurar que ciertas columnas son tipo numerico
+    #df_data = pd.read_csv(param_archivo)
+    df_data = pd.read_excel(param_archivo, sheet_name = 0)
+    df_data.columns = [i.lower() for i in list(df_data.columns)]
     numcols = ['s/l', 't/p', 'commission', 'openprice', 'closeprice', 'profit', 'size', 'swap', 'taxes', 'order']
-
-    # Convertir a numérico
     df_data[numcols] = df_data[numcols].apply(pd.to_numeric)
-    
     return df_data
-
 #%%
     
 # Para obtener el multiplicador expresando todo el pips
-    # Número de pips por instrumento
+# Número de pips por instrumento
 
 def f_pip_size(param_ins):
     """
     Parameters
     ----------
     param_ins : str : nombre de instrumento
+    
     Returns
     -------
+    pip_inst : func : valor en pips del instrumento seleccionado
+    
     Debugging
+    ---------
     
     """
+    
     # encontar y eliminar un guion bajo
     # inst = [param_ins.replace('-2', '') for i in ins]
 
@@ -80,16 +80,27 @@ def f_pip_size(param_ins):
                 'audcad': 10000, 'xauusd': 10, 'xagusd': 10, 'btcusd': 1}
 
     return pip_inst[inst]
-    return
+    #return
 
 #%%
+# Columna tiempo agregada para saber el tiempo transcurrido de una operación
 
-def f_columnas_datos(param_data):
+def f_columnas_tiempos(param_data):
     """
-
-    :rtype: object
+    Parameters
+    ----------
+    param_data : pd.DataFrame : df con información de transacciones ejecutadas
+    
+    Returns
+    -------
+    param_data : pd.DataFrame : df con columna agregada 'tiempo'
+    
+    Debugging
+    ---------
+    param_data = f_leer_archivo("archivo_tradeview_1.xlsx")
     """
-    # convertir columna de 'closetime' y 'opentime' utilizando pd.to_datatime
+    
+    # convertir columnas de 'closetime' y 'opentime' utilizando pd.to_datatime
     param_data['closetime'] = pd.to_datetime(param_data['closetime'])
     param_data['opentime'] = pd.to_datetime(param_data['opentime'])
 
@@ -98,49 +109,25 @@ def f_columnas_datos(param_data):
                              param_data.loc[i, 'opentime']).delta / 1e9
                             for i in range(0, len(param_data['closetime']))]
 
-    return param_data['tiempo']
-
-#%% 
-def f_columnas_tiempos(param_data):
-    """
-    Parameters
-    ----------
-    param_data : DataFrame base
-    Returns
-    -------
-    df_data : pd.DataFrame : con informacion contenida en archivo leido
-    Debugging
-    ---------
-    
-    # param_archivo = 'archivo_mt4.xlsx'
-    param_archivo = ' archivo_tradeview_1.xlsx'
-
-    """
-    # convertir columna de 'closetime' y 'opentime' utilizando pd.to_datatime
-    param_data['closetime'] = pd.to_datetime(param_data['closetime'])
-    param_data['opentime'] = pd.to_datetime(param_data['opentime'])
-
-    # tiempo transcurrido de una operación
-    param_data['tiempo'] = [(param_data.loc[i, 'closetime'] - param_data.loc[i, 'opentime']).delta / 1e9
-                            for i in range(0, len(param_data['closetime']))]
-
-    return param_data['tiempo']
+    # return param_data['tiempo']
     return param_data
 
-
 #%%
+# Nuevas columnas pips para saber el tamaño en pips de las transacciones ejecutadas 
 
 def f_columnas_pips(datos):
     """
     Parameters
     ----------
-    param_data : DataFrame base
+    datos : pd.DataFrame : dataframe con las transacciones ejecutadas ya con la columna 'tiempos'
+
     Returns
     -------
-    df_data : pd.DataFrame : con informacion contenida en archivo leido
+    param_data : pd.DataFrame : dataframe anterior pero con columnas 'pips' y 'pips acumulados'
+    
     Debugging
     ---------
-    param_archivo = 'archivo_tradeview_1.xlsx'
+    datos =  f_leer_archivo("archivo_tradeview_1.xlsx")
     
     """
 #    param_data['pips'] = [param_data.loc[i,'closeprice'] * f_pip_size(param_ins=param_data.loc[i,'symbol']) for i in range\
@@ -150,37 +137,167 @@ def f_columnas_pips(datos):
 #                  * f_pip_size(param_ins=param_data.loc[i,'symbol'])]
 #    return param_data['pips']
     
-    datos['pip_acm'] = [(datos.closeprice[i]-datos.openprice[i])*f_pip_size(datos.symbol[i]) for i in range(len(datos))]
-    datos['pip_acm'][datos.type=='sell'] *= -1
+    datos['pips'] = [(datos.closeprice[i] - datos.openprice[i])*f_pip_size(datos.symbol[i]) for i in range(len(datos))]
+    # datos['pips'][datos.type == 'sell'] *= -1
+    datos['pips_acm'] = datos.pips.cumsum()
     datos['profit_acm'] = datos['profit'].cumsum()
-    return datos
+    
+    return datos.copy()
 
-#%% 
-    # Estadísticas básicas
+#%%  Estadísticas básicas
 
 def f_basic_stats(datos):
     """
-    
     Parameters
     ----------
-    
-    param_data :param_archivo: str: archivo leer
+      datos : pd.DataFrame : dataframe con las transacciones ejecutadas, después de 'tiempos'
     
     Returns
     -------
-    : return: df_data: DataFrame
+    df_1_tabla : pd.DataFrame : dataframe con estadísticas básicas del comportamiento del trader
+    df_2_ranking : pd.DataFrame : dataframe con un ranking entre el 0 y el 1 en donde se califica con cuales divisas se obtuvieron operaciones precisas realizadas
+        
+    Debugging
+    ---------
+    datos = f_leer_archivo("archivo_tradeview_1.xlsx")
+    """
+    # print('------------')
+    # print(datos.head(3))
+    # print('------------')
+    
+    # Ejemplo: df[(df['col1'] >= 1) & (df['col1'] <=1 )]
+    
+    df_1_tabla = pd.DataFrame({'Ops totales': [len(datos['order']), 'Operaciones totales'],
+                                'Ops ganadoras': [len(datos[datos['pips_acm'] >= 0]), 'Operaciones ganadoras'],
+                                'Ops ganadoras_b': [len(datos[(datos['type'] == 'buy') & (datos['pips_acm'] >= 0)]), 'Operaciones ganadoras en compra'],
+                                'Ops ganadoras_s': [len(datos[(datos['type'] == 'sell') & (datos['pips_acm'] >= 0)]), 'Operaciones ganadoras en venta'],
+                                'Ops perdedoras': [len(datos[datos['pips_acm'] < 0]), 'Operaciones perdedoras'],
+                                'Ops perdedoras_b': [len(datos[(datos['type'] == 'buy') & (datos['pips_acm'] < 0)]), 'Operaciones perdedoras en compra'],
+                                'Ops perdedoras_s' : [len(datos[(datos['type'] == 'sell') & (datos['pips_acm'] < 0)]), 'Operaciones perdedoras en venta'],
+                                'Profit mediana': [datos['profit'].median(), 'Mediana de profit de operaciones'],
+                                'Pips mediana': [datos['pips_acm'].median(), 'Mediana de pips de operaciones'],
+                                'r_efectividad': [len(datos[datos['pips_acm'] >= 0])/len(datos['order']), 'Ganadoras Totales/Operaciones Totales'],
+                                'r_proporcion': [len(datos[datos['pips_acm'] < 0]) / len(datos[datos['pips_acm'] >= 0]), 'Perdedoras Totales/Ganadoras Totales'],
+                                'r_efectividad_b': [len(datos[(datos['type'] == 'buy') & (datos['pips_acm'] >= 0)]) / len(datos['order']), 'Operaciones ganadoras de compra/Operaciones Totales'],
+                                'r_efectividad_s': [len(datos[(datos['type'] == 'sell') & (datos['pips_acm'] >= 0)]) / len(datos['order']), 'Operaciones ganadoras de venta/Operaciones Totales'],
+                                }, index = ['Valor', 'Descripción']).transpose()
+    
+    tmp = pd.DataFrame({i: len(datos[datos.profit >0][datos.symbol == i])/len(datos[datos.symbol == i])
+                        for i in datos.symbol.unique()}, index = ['rank']).transpose()
+    
+    df_1_ranking = tmp.sort_values(by = 'rank', ascending = False)
+    
+    return {'df_1_tabla' : df_1_tabla.copy(), 'df_1_ranking' : df_1_ranking.copy()}
+
+#%% Parte 3: Medidas de atribución al desempeño
+#%% 
+
+def f_capital_acm(datos):
+    """
+    Parameters
+    ----------
+    datos : pandas.DataFrame : dataframe con transacciones ejecutadas después de haber corrido 'tiempos' y 'pips'
+
+    Returns
+    -------
+    datos : pandas.DataFrame : se le agrega una columna al dataframe
     
     Debugging
     ---------
-    param_archivo = 'archivo_tradeview_1.xlsx'
-    
+    datos = f_leer_archivo("archivo_tradeview_1.csv")
     """
     
-    return pd.DataFrame({
-            'Ops totales': [len(param_data['order']), 'Operaciones totales'],
-            'Ops ganadoras': [len(param_data['pip_acm'])>=0, 'Operaciones ganadoras']})
+    datos['capital_acm'] = 5000 + datos.profit_acm 
+    return datos.copy()
+
+#%% 
+
+ # def f_profit_diario(datos):
+ #     """
+ #     Parameters
+ #     ----------
+ #     datos : pandas.DataFrame : dataframe de fechas históricas solo usando columnas timestamp y profit
+     
+ #     Returns
+ #     -------
+ #     datos : pandas.DataFrame : dataframe con las columnas timestamp, profit diario y el acumulado
+     
+ #     Debugging
+ #     ---------
+ #     datos = f_leer_archivo("archivo_tradeview_1.csv")
+
+ #     """
+     
+ #     pass
+
+#%%
+def f_stats_mad(datos):
+    """
+    Parameters
+    ----------
+    datos : pandas.DataFrame : dataframe con transacciones ejecutadas después de tiempos y pips
+    
+    Returns
+    -------
+    datos : pandas.DataFrame : dataframe con rendimientos logarítmicos. Tomando en cuenta que se inicializa con una cuenta de $5,000
+
+    Debugging
+    ---------
+    datos = 'f_leer_archivo("archivo_tradeview_1.csv")
+    
+    """
+    rend_log = np.log(datos.capital_acm[1:].values/datos.capital_acm[:-1].values)
+    # benchmark = 
+    # rend_log_bench = np.log(datos_benchmark...)
+    # tracking_error = rend_log - benchmark
+    
+    # https://towardsdatascience.com/python-for-finance-stock-portfolio-analyses-6da4c3e61054
+    # https://www.investopedia.com/terms/i/informationratio.asp    
+    rf = 0.08
+    
+    MAD = pd.DataFrame({
+        'sharpe': (rend_log.mean()*30 - rf) / rend_log.std()*(30**0.5),
+        'sortino_b': (rend_log.mean()*30 - rf) / rend_log[rend_log >= 0].std()*(30**0.5),
+        'sortino_s': (rend_log.mean()*30 - rf) / rend_log[rend_log < 0].std()*(30**0.5),
+        'drawdown_cap': datos.capital_acm.min() - 5000,
+        'drawup_cap': datos.capital_acm.max() - 5000,
+        'drawdown_pips': datos.pips_acm.min(),
+        'drawup_pips': datos.pips_acm.max() #,
+        # 'information_ratio': (rend_log.mean()*30 - rend_log_bench.mean()*30) / tracking_error.std()*30**0.5
+        }, index = ['Valor']).transpose()
+
+    return MAD
+
+#%% Parte 4: Sesgos cognitivos del trader
+
+# def f_sesgos_cognitivos():
+#     """
+#     Parameters
+#     ----------
+    
+#     Returns
+#     -------
+    
+#     Debugging
+#     ---------
+    
+#     """
+    
+#     pass
+    
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+ 

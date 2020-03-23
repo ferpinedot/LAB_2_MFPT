@@ -15,30 +15,35 @@ Created on Thu Mar  5 17:52:29 2020
 
 import funciones as fn
 
-#datos de entrada
-#data_arch = 'archivo_mt4.xlsx'
-param_archivo = 'archivo_tradeview_1.xlsx'
+# Leer el archivo
+#1
+#archivo = "archivos/archivo_tradeview_1.csv"
+# 2
+# archivo = "archivos/archivo_tradeview_1.xlsx"
+# datos = fn.f_leer_archivo(archivo)
+#3
+datos = fn.f_leer_archivo(param_archivo='archivos/archivo_tradeview_1.xlsx', sheet_name= 0)
 
-datos = fn.f_leer_archivo('archivo_tradeview_1.xlsx')
+# Tiempo de la operación
+datos = fn.f_columnas_tiempos(datos)
 
-#cols = fn.f_columnas_tiempos(datos)
-fn.f_columnas_tiempos(datos)
-fn.f_columnas_pips(datos)
-stats = fn.f_basic_stats(datos)
+# Número de pips
+datos = fn.f_columnas_pips(datos)
 
-#%%
+# Capital acumulado ($)
+datos = fn.f_capital_acm(datos)
 
-#
-#df_data = fn.f_columnas_tiempos(param_data = df_data)
+# Estadísticas básicas
+estadisticas = fn.f_basic_stats(datos)
 
-#param_ins='usdjpy'
-#fn.f_pip_size(param_ins)
+# Estadísticas de desempeño de movimientos
+desempeno = fn.f_stats_mad(datos)
 
-#Pip size
-pip_size = fn.f_pip_size(param_ins='eurusd')
+## Behavioral Finance, sesgos cognitivos
+# sesgos = fn.f_sesgos_cognitivos(datos)
 
-#Tranformaciones de tiempo
-datos = fn.f_columnas_tiempos(param_data=datos)
-
-#Transformaciones Pips
-datos = fn.f_columnas_pips(param_data=datos)
+print(datos)
+print(estadisticas['df_1_tabla'])
+print(estadisticas['df_1_ranking'])
+print(desempeno)
+#print(sesgos)
