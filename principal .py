@@ -37,13 +37,14 @@ datos = fn.f_capital_acm(datos)
 estadisticas = fn.f_basic_stats(datos)
 
 # Estadísticas de desempeño de movimientos
+profit_d = fn.f_profit_diario(datos)
 desempeno = fn.f_stats_mad(datos)
 
 ## Behavioral Finance, sesgos cognitivos
 # sesgos = fn.f_sesgos_cognitivos(datos)
 
-print(datos)
-print(estadisticas['df_1_tabla'])
-print(estadisticas['df_1_ranking'])
-print(desempeno)
+# print(datos)
+# print(estadisticas['df_1_tabla'])
+# print(estadisticas['df_1_ranking'])
+# print(desempeno)
 #print(sesgos)

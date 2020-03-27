@@ -138,7 +138,7 @@ def f_columnas_pips(datos):
 #    return param_data['pips']
     
     datos['pips'] = [(datos.closeprice[i] - datos.openprice[i])*f_pip_size(datos.symbol[i]) for i in range(len(datos))]
-    # datos['pips'][datos.type == 'sell'] *= -1
+    datos['pips'][datos.type == 'sell'] *= -1
     datos['pips_acm'] = datos.pips.cumsum()
     datos['profit_acm'] = datos['profit'].cumsum()
     
@@ -154,6 +154,7 @@ def f_basic_stats(datos):
     
     Returns
     -------
+    Dos dataframes:
     df_1_tabla : pd.DataFrame : dataframe con estadísticas básicas del comportamiento del trader
     df_2_ranking : pd.DataFrame : dataframe con un ranking entre el 0 y el 1 en donde se califica con cuales divisas se obtuvieron operaciones precisas realizadas
         
@@ -168,30 +169,30 @@ def f_basic_stats(datos):
     # Ejemplo: df[(df['col1'] >= 1) & (df['col1'] <=1 )]
     
     df_1_tabla = pd.DataFrame({'Ops totales': [len(datos['order']), 'Operaciones totales'],
-                                'Ops ganadoras': [len(datos[datos['pips_acm'] >= 0]), 'Operaciones ganadoras'],
-                                'Ops ganadoras_b': [len(datos[(datos['type'] == 'buy') & (datos['pips_acm'] >= 0)]), 'Operaciones ganadoras en compra'],
-                                'Ops ganadoras_s': [len(datos[(datos['type'] == 'sell') & (datos['pips_acm'] >= 0)]), 'Operaciones ganadoras en venta'],
-                                'Ops perdedoras': [len(datos[datos['pips_acm'] < 0]), 'Operaciones perdedoras'],
-                                'Ops perdedoras_b': [len(datos[(datos['type'] == 'buy') & (datos['pips_acm'] < 0)]), 'Operaciones perdedoras en compra'],
-                                'Ops perdedoras_s' : [len(datos[(datos['type'] == 'sell') & (datos['pips_acm'] < 0)]), 'Operaciones perdedoras en venta'],
-                                'Profit mediana': [datos['profit'].median(), 'Mediana de profit de operaciones'],
-                                'Pips mediana': [datos['pips_acm'].median(), 'Mediana de pips de operaciones'],
-                                'r_efectividad': [len(datos[datos['pips_acm'] >= 0])/len(datos['order']), 'Ganadoras Totales/Operaciones Totales'],
-                                'r_proporcion': [len(datos[datos['pips_acm'] < 0]) / len(datos[datos['pips_acm'] >= 0]), 'Perdedoras Totales/Ganadoras Totales'],
-                                'r_efectividad_b': [len(datos[(datos['type'] == 'buy') & (datos['pips_acm'] >= 0)]) / len(datos['order']), 'Operaciones ganadoras de compra/Operaciones Totales'],
-                                'r_efectividad_s': [len(datos[(datos['type'] == 'sell') & (datos['pips_acm'] >= 0)]) / len(datos['order']), 'Operaciones ganadoras de venta/Operaciones Totales'],
+                                'Ops ganadoras': [len(datos[datos['profit'] >= 0]), 'Operaciones ganadoras'],
+                                'Ops ganadoras_b': [len(datos[(datos['type'] == 'buy') & (datos['profit'] >= 0)]), 'Operaciones ganadoras en compra'],
+                                'Ops ganadoras_s': [len(datos[(datos['type'] == 'sell') & (datos['profit'] >= 0)]), 'Operaciones ganadoras en venta'],
+                                'Ops perdedoras': [len(datos[datos['profit'] < 0]), 'Operaciones perdedoras'],
+                                'Ops perdedoras_b': [len(datos[(datos['type'] == 'buy') & (datos['profit'] < 0)]), 'Operaciones perdedoras en compra'],
+                                'Ops perdedoras_s' : [len(datos[(datos['type'] == 'sell') & (datos['profit'] < 0)]), 'Operaciones perdedoras en venta'],
+                                'Profit media': [datos['profit'].median(), 'Mediana de profit de operaciones'],
+                                'Pips media': [datos['pips'].median(), 'Mediana de pips de operaciones'],
+                                'r_efectividad': [len(datos[datos['profit'] >= 0])/len(datos['order']), 'Ganadoras Totales/Operaciones Totales'],
+                                'r_proporcion': [len(datos[datos['profit'] >= 0]) / len(datos[datos['profit'] < 0]), 'Perdedoras Totales/Ganadoras Totales'],
+                                'r_efectividad_b': [len(datos[(datos['type'] == 'buy') & (datos['profit'] >= 0)]) / len(datos['order']), 'Operaciones ganadoras de compra/Operaciones Totales'],
+                                'r_efectividad_s': [len(datos[(datos['type'] == 'sell') & (datos['profit'] >= 0)]) / len(datos['order']), 'Operaciones ganadoras de venta/Operaciones Totales'],
                                 }, index = ['Valor', 'Descripción']).transpose()
     
-    tmp = pd.DataFrame({i: len(datos[datos.profit >0][datos.symbol == i])/len(datos[datos.symbol == i])
+    tb1 = pd.DataFrame({i: len(datos[datos.profit >0][datos.symbol == i])/len(datos[datos.symbol == i])
                         for i in datos.symbol.unique()}, index = ['rank']).transpose()
     
-    df_1_ranking = tmp.sort_values(by = 'rank', ascending = False)
+    df_1_ranking = (tb1*100).sort_values(by = 'rank', ascending = False).T.transpose()
     
     return {'df_1_tabla' : df_1_tabla.copy(), 'df_1_ranking' : df_1_ranking.copy()}
 
 #%% Parte 3: Medidas de atribución al desempeño
 #%% 
-
+# Cálculo del capital acumulado
 def f_capital_acm(datos):
     """
     Parameters
@@ -207,30 +208,35 @@ def f_capital_acm(datos):
     datos = f_leer_archivo("archivo_tradeview_1.csv")
     """
     
+    # Se forma una nueva columna inicializada en $5,000 donde se le suma/resta el profit acumulado en cada renglón
     datos['capital_acm'] = 5000 + datos.profit_acm 
     return datos.copy()
 
 #%% 
+# Cálculo del profit diario
+    
+def f_profit_diario(datos):
+     """
+     Parameters
+     ----------
+     datos : pandas.DataFrame : dataframe de fechas históricas solo usando columnas timestamp y profit
+  
+     Returns
+     -------
+     datos : pandas.DataFrame : dataframe con las columnas timestamp, profit diario y el acumulado
+  
+     Debugging
+     ---------
+     datos = f_leer_archivo("archivo_tradeview_1.xlsx")
 
- # def f_profit_diario(datos):
- #     """
- #     Parameters
- #     ----------
- #     datos : pandas.DataFrame : dataframe de fechas históricas solo usando columnas timestamp y profit
-     
- #     Returns
- #     -------
- #     datos : pandas.DataFrame : dataframe con las columnas timestamp, profit diario y el acumulado
-     
- #     Debugging
- #     ---------
- #     datos = f_leer_archivo("archivo_tradeview_1.csv")
-
- #     """
-     
- #     pass
+     """
+     pass
+  
 
 #%%
+    
+# Terminar el profit acumulado diario antes de terminar stats mad
+    
 def f_stats_mad(datos):
     """
     Parameters
@@ -249,21 +255,29 @@ def f_stats_mad(datos):
     rend_log = np.log(datos.capital_acm[1:].values/datos.capital_acm[:-1].values)
     # benchmark = 
     # rend_log_bench = np.log(datos_benchmark...)
-    # tracking_error = rend_log - benchmark
+    # tracking_error = rend_log - rend_log_bench
     
     # https://towardsdatascience.com/python-for-finance-stock-portfolio-analyses-6da4c3e61054
     # https://www.investopedia.com/terms/i/informationratio.asp    
     rf = 0.08
     
+    #%%
+    #TIP DEL PROFE
+    #df_data.groupby('fechas_dias')['profit'].sum()
+    #%%
+    # Cambiar a semanal los datos
+    # Agregar un benchmark SP500
     MAD = pd.DataFrame({
         'sharpe': (rend_log.mean()*30 - rf) / rend_log.std()*(30**0.5),
         'sortino_b': (rend_log.mean()*30 - rf) / rend_log[rend_log >= 0].std()*(30**0.5),
         'sortino_s': (rend_log.mean()*30 - rf) / rend_log[rend_log < 0].std()*(30**0.5),
-        'drawdown_cap': datos.capital_acm.min() - 5000,
-        'drawup_cap': datos.capital_acm.max() - 5000,
-        'drawdown_pips': datos.pips_acm.min(),
-        'drawup_pips': datos.pips_acm.max() #,
-        # 'information_ratio': (rend_log.mean()*30 - rend_log_bench.mean()*30) / tracking_error.std()*30**0.5
+        # Que de donde se inicia, no hayan valores mayores al punto de inicio y sea solo tendencia bajista
+        # 'drawdown_cap': 
+        # Que de donde se inicia, no hayan valores menores al punto de inicio y que sea solo tendencia alcista
+        # 'drawup_cap': 
+        #'drawdown_pips': datos.pips_acm...,
+        #'drawup_pips': datos.pips_acm.. #,
+        # 'information_ratio': (rend_log.mean()*7 - rend_log_bench.mean()*7) / tracking_error.std()*7**0.5
         }, index = ['Valor']).transpose()
 
     return MAD
@@ -285,7 +299,7 @@ def f_stats_mad(datos):
     
 #     pass
     
-
+# Disposission effect
 
 
 
