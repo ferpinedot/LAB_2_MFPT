@@ -130,12 +130,6 @@ def f_columnas_pips(datos):
     datos =  f_leer_archivo("archivo_tradeview_1.xlsx")
     
     """
-#    param_data['pips'] = [param_data.loc[i,'closeprice'] * f_pip_size(param_ins=param_data.loc[i,'symbol']) for i in range\
-#               (0, len(param_data.rows)) 
-#                  if param_data['type'] == 'buy' else\
-#                  param_data.loc[i,'openprice'] \
-#                  * f_pip_size(param_ins=param_data.loc[i,'symbol'])]
-#    return param_data['pips']
     
     datos['pips'] = [(datos.closeprice[i] - datos.openprice[i])*f_pip_size(datos.symbol[i]) for i in range(len(datos))]
     datos['pips'][datos.type == 'sell'] *= -1
@@ -156,17 +150,12 @@ def f_basic_stats(datos):
     -------
     Dos dataframes:
     df_1_tabla : pd.DataFrame : dataframe con estadísticas básicas del comportamiento del trader
-    df_2_ranking : pd.DataFrame : dataframe con un ranking entre el 0 y el 1 en donde se califica con cuales divisas se obtuvieron operaciones precisas realizadas
+    df_1_ranking : pd.DataFrame : dataframe con un ranking entre el 0 y el 1 en donde se califica con cuales divisas se obtuvieron operaciones precisas realizadas
         
     Debugging
     ---------
     datos = f_leer_archivo("archivo_tradeview_1.xlsx")
     """
-    # print('------------')
-    # print(datos.head(3))
-    # print('------------')
-    
-    # Ejemplo: df[(df['col1'] >= 1) & (df['col1'] <=1 )]
     
     df_1_tabla = pd.DataFrame({'Ops totales': [len(datos['order']), 'Operaciones totales'],
                                 'Ops ganadoras': [len(datos[datos['profit'] >= 0]), 'Operaciones ganadoras'],
@@ -178,13 +167,16 @@ def f_basic_stats(datos):
                                 'Profit media': [datos['profit'].median(), 'Mediana de profit de operaciones'],
                                 'Pips media': [datos['pips'].median(), 'Mediana de pips de operaciones'],
                                 'r_efectividad': [len(datos[datos['profit'] >= 0])/len(datos['order']), 'Ganadoras Totales/Operaciones Totales'],
-                                'r_proporcion': [len(datos[datos['profit'] >= 0]) / len(datos[datos['profit'] < 0]), 'Perdedoras Totales/Ganadoras Totales'],
+                                'r_proporcion': [len(datos[datos['profit'] >= 0]) / len(datos[datos['profit'] < 0]), 'Ganadoras Totales/Perdedoras Totales'],
                                 'r_efectividad_b': [len(datos[(datos['type'] == 'buy') & (datos['profit'] >= 0)]) / len(datos['order']), 'Operaciones ganadoras de compra/Operaciones Totales'],
                                 'r_efectividad_s': [len(datos[(datos['type'] == 'sell') & (datos['profit'] >= 0)]) / len(datos['order']), 'Operaciones ganadoras de venta/Operaciones Totales'],
                                 }, index = ['Valor', 'Descripción']).transpose()
     
     tb1 = pd.DataFrame({i: len(datos[datos.profit >0][datos.symbol == i])/len(datos[datos.symbol == i])
                         for i in datos.symbol.unique()}, index = ['rank']).transpose()
+    
+    convert_dict = {'Valor': float} 
+    df_1_tabla = df_1_tabla.astype(convert_dict) 
     
     df_1_ranking = (tb1*100).sort_values(by = 'rank', ascending = False).T.transpose()
     
@@ -230,13 +222,28 @@ def f_profit_diario(datos):
      datos = f_leer_archivo("archivo_tradeview_1.xlsx")
 
      """
-     pass
-  
-
+     # cantidad de operaciones cerradas ese dia
+     datos['ops'] = [i.date() for i in datos.closetime] 
+     diario = pd.date_range(datos.ops.min(),datos.ops.max()).date
+     # convertir a dataframe las fechas diarias
+     fechas = pd.DataFrame({'timestamp' : diario})
+     
+     groups = datos.groupby('ops')
+     profit = groups['profit'].sum()
+     # convertir los profits diarios a dataframe
+     profit_diario = pd.DataFrame({'profit_d' : [profit[i] if i in profit.index else 0 for i in diario]})
+     profit_acm = np.cumsum(profit_diario) + 5000
+     # juntar en un solo dataframe los dos dataframes anteriores fechas y profits diarios
+     f_p1 =pd.merge(fechas, profit_diario, left_index = True, right_index = True)
+     # juntar el dataframe anterior de los dos df con los profits acumulados
+     df_profit_diario1 = pd.merge(f_p1, profit_acm, left_index = True, right_index = True)
+     # renombrar las columnas del nuevo dataframe
+     df_profit_diario = df_profit_diario1.rename(columns = {"profit_d_x" : "profit_d", "profit_d_y" : "profit_acm_d"})
+     
+     return df_profit_diario
+     
 #%%
-    
-# Terminar el profit acumulado diario antes de terminar stats mad
-    
+     
 def f_stats_mad(datos):
     """
     Parameters
@@ -253,35 +260,44 @@ def f_stats_mad(datos):
     
     """
     rend_log = np.log(datos.capital_acm[1:].values/datos.capital_acm[:-1].values)
-    # benchmark = 
-    # rend_log_bench = np.log(datos_benchmark...)
-    # tracking_error = rend_log - rend_log_bench
+    rf = 0.08/300
     
-    # https://towardsdatascience.com/python-for-finance-stock-portfolio-analyses-6da4c3e61054
-    # https://www.investopedia.com/terms/i/informationratio.asp    
-    rf = 0.08
+    profit_d = f_profit_diario(datos)
     
-    #%%
-    #TIP DEL PROFE
-    #df_data.groupby('fechas_dias')['profit'].sum()
-    #%%
-    # Cambiar a semanal los datos
-    # Agregar un benchmark SP500
-    MAD = pd.DataFrame({
-        'sharpe': (rend_log.mean()*30 - rf) / rend_log.std()*(30**0.5),
-        'sortino_b': (rend_log.mean()*30 - rf) / rend_log[rend_log >= 0].std()*(30**0.5),
-        'sortino_s': (rend_log.mean()*30 - rf) / rend_log[rend_log < 0].std()*(30**0.5),
-        # Que de donde se inicia, no hayan valores mayores al punto de inicio y sea solo tendencia bajista
-        # 'drawdown_cap': 
-        # Que de donde se inicia, no hayan valores menores al punto de inicio y que sea solo tendencia alcista
-        # 'drawup_cap': 
-        #'drawdown_pips': datos.pips_acm...,
-        #'drawup_pips': datos.pips_acm.. #,
-        # 'information_ratio': (rend_log.mean()*7 - rend_log_bench.mean()*7) / tracking_error.std()*7**0.5
-        }, index = ['Valor']).transpose()
-
-    return MAD
-
+    # Drawdown
+    min_val = profit_d.profit_acm_d.min()
+    val_mask_down = profit_d['profit_acm_d'] == min_val
+    where_min = profit_d[val_mask_down]
+    fecha_f_dd = where_min.iloc[0]['timestamp']
+    val_min_dd = where_min.iloc[0]['profit_acm_d']
+    dd_cap = [fecha_f_dd, val_min_dd]
+    
+    # Drawup
+    max_val = profit_d.profit_acm_d.max()
+    val_mask_up = profit_d['profit_acm_d'] == max_val
+    where_max = profit_d[val_mask_up]
+    fecha_f_du = where_max.iloc[0]['timestamp']
+    val_max_du = where_max.iloc[0]['profit_acm_d']
+    du_cap = [fecha_f_du, val_max_du]
+        
+    
+    # Métricas
+    metrica = pd.DataFrame({'métricas': ['sharpe', 'sortino_b', 'sortino_s', 'drawdown_cap_b', 'drawdown_cap_s', 'information_r']})
+    valor = pd.DataFrame({'valor' : [((rend_log.mean() - rf)/ rend_log.std()), 
+                                     ((rend_log.mean() - rf) / rend_log[rend_log >= 0].std()),
+                                     ((rend_log.mean() - rf) / rend_log[rend_log < 0].std()),
+                                     (dd_cap),
+                                     (du_cap),
+                                     (0.33)
+                                     ]})
+    df_mad1 = pd.merge(metrica, valor, left_index = True, right_index = True)
+    descripcion = pd.DataFrame({'descripción': ['Sharpe Ratio', 'Sortino Ratio para Posiciones de Compra', 'Sortino Ratio para Posiciones de Venta', 'DrawDown de Capital', 'DrawUp de Capital', 'Information Ratio']})
+    df_MAD = pd.merge(df_mad1, descripcion, left_index = True, right_index= True)
+    #convert_dict = {'valor': float} 
+    #df_MAD = df_MAD.astype(convert_dict) 
+    
+    return df_MAD
+    
 #%% Parte 4: Sesgos cognitivos del trader
 
 # def f_sesgos_cognitivos():

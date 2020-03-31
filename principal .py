@@ -16,14 +16,9 @@ Created on Thu Mar  5 17:52:29 2020
 import funciones as fn
 
 # Leer el archivo
-#1
-#archivo = "archivos/archivo_tradeview_1.csv"
-# 2
-# archivo = "archivos/archivo_tradeview_1.xlsx"
-# datos = fn.f_leer_archivo(archivo)
-#3
 datos = fn.f_leer_archivo(param_archivo='archivos/archivo_tradeview_1.xlsx', sheet_name= 0)
-
+#datos = fn.f_leer_archivo(param_archivo='archivos/archivo_pap.xlsx', sheet_name= 0)
+ 
 # Tiempo de la operación
 datos = fn.f_columnas_tiempos(datos)
 
@@ -43,8 +38,8 @@ desempeno = fn.f_stats_mad(datos)
 ## Behavioral Finance, sesgos cognitivos
 # sesgos = fn.f_sesgos_cognitivos(datos)
 
-# print(datos)
-# print(estadisticas['df_1_tabla'])
-# print(estadisticas['df_1_ranking'])
-# print(desempeno)
+print(datos)
+print(estadisticas['df_1_tabla'])
+print(estadisticas['df_1_ranking'])
+print(desempeno)
 #print(sesgos)
