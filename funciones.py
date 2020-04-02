@@ -15,6 +15,8 @@ Created on Thu Mar  5 17:52:47 2020
 
 import pandas as pd
 import numpy as np
+import pandas_datareader.data as web
+import datetime 
 
 
 # -- --------------------------------------------------- FUNCION: Leer archivo de entrada -- #
@@ -44,6 +46,7 @@ def f_leer_archivo(param_archivo, sheet_name = 0):
     numcols = ['s/l', 't/p', 'commission', 'openprice', 'closeprice', 'profit', 'size', 'swap', 'taxes', 'order']
     df_data[numcols] = df_data[numcols].apply(pd.to_numeric)
     return df_data
+
 #%%
     
 # Para obtener el multiplicador expresando todo el pips
@@ -241,6 +244,27 @@ def f_profit_diario(datos):
      df_profit_diario = df_profit_diario1.rename(columns = {"profit_d_x" : "profit_d", "profit_d_y" : "profit_acm_d"})
      
      return df_profit_diario
+ 
+#%%
+     
+def adj_close(tickers, start_date=None, end_date=None):
+    """
+    Parameters
+    ----------
+    tickers : Type 
+    start_date : datetime
+    end_date : datetime
+
+    Returns
+    -------
+    close : Type
+
+    """
+    # Descargar dataframe con datos de precio de cierre ajustado
+    close = web.DataReader(name = tickers, data_source = 'yahoo', start = start_date, end = end_date)
+    close = close['Adj Close']
+    close.sort_index(inplace=True)
+    return close
      
 #%%
      
@@ -261,73 +285,77 @@ def f_stats_mad(datos):
     """
     rend_log = np.log(datos.capital_acm[1:].values/datos.capital_acm[:-1].values)
     rf = 0.08/300
+    mar = 0.3/300
+    # rb = 0.0832/300
     
     profit_d = f_profit_diario(datos)
+     
+    # DD y DU
+    where_row = profit_d.loc[profit_d['profit_acm_d'] == profit_d.profit_acm_d.min()]
+    where_position = where_row.index.tolist()
     
     # Drawdown
-    min_val = profit_d.profit_acm_d.min()
-    val_mask_down = profit_d['profit_acm_d'] == min_val
-    where_min = profit_d[val_mask_down]
-    fecha_f_dd = where_min.iloc[0]['timestamp']
-    val_min_dd = where_min.iloc[0]['profit_acm_d']
-    dd_cap = [fecha_f_dd, val_min_dd]
-    
+    prev_where = profit_d.loc[0:where_position[0]]
+    max_prev_where = prev_where.max()
+    min_prev_where = prev_where.min()
+    dd = max_prev_where['profit_acm_d'] - min_prev_where['profit_acm_d']
+    drawdown = list([min_prev_where['timestamp'], max_prev_where['timestamp'], dd])
+ 
     # Drawup
-    max_val = profit_d.profit_acm_d.max()
-    val_mask_up = profit_d['profit_acm_d'] == max_val
-    where_max = profit_d[val_mask_up]
-    fecha_f_du = where_max.iloc[0]['timestamp']
-    val_max_du = where_max.iloc[0]['profit_acm_d']
-    du_cap = [fecha_f_du, val_max_du]
-        
+    foll_where = profit_d.loc[where_position[0]:]
+    max_foll_where = foll_where.max()
+    min_foll_where = foll_where.min()
+    du = max_foll_where['profit_acm_d'] - min_foll_where['profit_acm_d']
+    drawup = list([min_foll_where['timestamp'], max_foll_where['timestamp'], du])
+     
+    # Information Ratio
+    # ir_num = rend_log.mean() - rb
+    # y = slice(0, 10, 1)
+    start = datos['closetime'].min() # [y]
+    end = datos['closetime'].max() # [y]
+    close = adj_close(tickers='^GSPC', start_date=start, end_date=end)
+    rb = np.log(close / close.shift(1)).iloc[1:]
+    rend_tot = [str(i)[1:] for i in rend_log]
+    precios = [float(i) for i in rend_tot]
+    for i in range(len(precios)):
+        benchmark = precios[i] - rb
+    # df_mad.loc['information_r', ['valor', 'descripcion']] = [(rend_log.mean()-rb.mean())/benchmark.std(), 'Information Ratio']
+     
     
     # Métricas
     metrica = pd.DataFrame({'métricas': ['sharpe', 'sortino_b', 'sortino_s', 'drawdown_cap_b', 'drawdown_cap_s', 'information_r']})
     valor = pd.DataFrame({'valor' : [((rend_log.mean() - rf)/ rend_log.std()), 
-                                     ((rend_log.mean() - rf) / rend_log[rend_log >= 0].std()),
-                                     ((rend_log.mean() - rf) / rend_log[rend_log < 0].std()),
-                                     (dd_cap),
-                                     (du_cap),
-                                     (0.33)
+                                     ((rend_log.mean() - mar) / rend_log[rend_log >= 0].std()), #rend compra.mean() - mar / 
+                                     ((rend_log.mean() - mar) / rend_log[rend_log < 0].std()),
+                                     (drawdown),
+                                     (drawup),
+                                     ((rend_log.mean()-rb.mean())/benchmark.mean())
                                      ]})
+    
     df_mad1 = pd.merge(metrica, valor, left_index = True, right_index = True)
     descripcion = pd.DataFrame({'descripción': ['Sharpe Ratio', 'Sortino Ratio para Posiciones de Compra', 'Sortino Ratio para Posiciones de Venta', 'DrawDown de Capital', 'DrawUp de Capital', 'Information Ratio']})
     df_MAD = pd.merge(df_mad1, descripcion, left_index = True, right_index= True)
-    #convert_dict = {'valor': float} 
-    #df_MAD = df_MAD.astype(convert_dict) 
+    # convert_dict = {'valor': float} 
+    # df_MAD = df_MAD.astype(convert_dict) 
     
     return df_MAD
     
 #%% Parte 4: Sesgos cognitivos del trader
+#%%
 
-# def f_sesgos_cognitivos():
-#     """
-#     Parameters
-#     ----------
+def f_sesgos_cognitivo(datos):
+    """
+    Parameters
+    ---------
+    datos : pandas.DataFrame : informacion de las operaciones 
+
+    Returns
+    ---------
     
-#     Returns
-#     -------
+
+    Debuggin
+    ---------
+    datos = f_leer_archivo('archivo_tradeview_1.xlsx')
+    """
     
-#     Debugging
-#     ---------
-    
-#     """
-    
-#     pass
-    
-# Disposission effect
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
+    pass

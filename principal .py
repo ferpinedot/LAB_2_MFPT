@@ -16,9 +16,11 @@ Created on Thu Mar  5 17:52:29 2020
 import funciones as fn
 
 # Leer el archivo
+# Ejemplo del prof
 datos = fn.f_leer_archivo(param_archivo='archivos/archivo_tradeview_1.xlsx', sheet_name= 0)
-#datos = fn.f_leer_archivo(param_archivo='archivos/archivo_pap.xlsx', sheet_name= 0)
- 
+# Mi archivo
+# datos = fn.f_leer_archivo(param_archivo='archivos/archivo_pap.xlsx', sheet_name= 0)
+
 # Tiempo de la operación
 datos = fn.f_columnas_tiempos(datos)
 
