@@ -46,8 +46,7 @@ vn.profitd(datos)
 
 # Behavioral Finance, sesgos cognitivos
 sesgos = fn.f_sesgos_cognitivos(datos)
-porcentaje = abs(sum(datos[datos['profit/cap (%)'] > 0]['profit/cap (%)']) /
-             sum(datos[datos['profit/cap (%)'] < 0]['profit/cap (%)']))
+
 
 print(datos)
 print(estadisticas['df_1_tabla'])
@@ -55,5 +54,5 @@ print(estadisticas['df_1_ranking'])
 print(desempeno)
 print(sesgos['ocurrencias'])
 print(sesgos['resultados'])
-print(porcentaje)
+
 
