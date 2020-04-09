@@ -16,7 +16,7 @@ Created on Thu Mar  5 17:52:47 2020
 import pandas as pd
 import numpy as np
 import pandas_datareader.data as web
-import dats as dt
+import datos as dt
 import datetime 
 import math
 from oandapyV20 import API

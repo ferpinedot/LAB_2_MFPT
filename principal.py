@@ -13,7 +13,7 @@ Created on Thu Mar  5 17:52:29 2020
 # -- repositorio: https://github.com/ferpinedot/LAB_2_MFPT
 # -- ------------------------------------------------------------------------------------ -- #
 
-import funciones_f as fn
+import funciones as fn
 import visualizaciones as vn
 
 # Leer el archivo
