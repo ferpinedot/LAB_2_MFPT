@@ -47,7 +47,26 @@ def f_leer_archivo(param_archivo, sheet_name = 0):
     df_data[numcols] = df_data[numcols].apply(pd.to_numeric)
     return df_data
 
-#%%
+
+def f_instrument(ins):
+    """
+    Parameters
+    ----------
+    ins : str : instrumento del precio que se necesite
+
+    Returns
+    -------
+    str : instrumento con un formato en mayúsculas y con _ cada 3 letras
+    
+    Debuggin
+    --------
+    instrument = 'usdmxn' a 'USD_MXN'
+    
+    """
+    # Cambiar automáticamente el nombre de los instrumentos en minúscula a mayúscula y
+    # cambiando al formato para que OANDA pueda leer qué instrumentos
+    return ins.upper()[:3] + '_' + ins.upper()[3:]
+   
     
 # Para obtener el multiplicador expresando todo el pips
 # Número de pips por instrumento
@@ -382,7 +401,7 @@ def f_stats_mad(datos):
     
 #%% Parte 4: Sesgos cognitivos del trader
 #%%
-
+    
 def f_prices(param_ins, date):
     """
     Parameters
@@ -415,26 +434,6 @@ def f_prices(param_ins, date):
     return float(prices[0]['mid']['o'])
 
 
-def f_instrument(ins):
-    """
-    Parameters
-    ----------
-    ins : str : instrumento del precio que se necesite
-
-    Returns
-    -------
-    str : instrumento con un formato en mayúsculas y con _ cada 3 letras
-    
-    Debuggin
-    --------
-    instrument = 'usdmxn'
-    
-    """
-    # Cambiar automáticamente el nombre de los instrumentos en minúscula a mayúscula y
-    # cambiando al formato para que OANDA pueda leer qué instrumentos
-    return ins.upper()[:3] + '_' + ins.upper()[3:]
-
-
 def f_be_de(datos):
     """
     Parameters
@@ -446,7 +445,7 @@ def f_be_de(datos):
     
     Debuggin
     --------
-    datos = 'f_leer_archivo("archivo_tradeview_1.csv")
+    datos = 'f_leer_archivo("archivo_tradeview_1.xlsx")
     """
     
     # Crear una nueva columna en el dataframe de datos con un ratio del profit por operación entre el capital acumulado
@@ -461,14 +460,13 @@ def f_be_de(datos):
     df_gand = datos[datos['profit'] > 0]
     df_gand.reset_index(inplace = True, drop = True)
     
-    # Con las operaciones ya ganadas, buscar las operaciones que pertenecen a los cuatro escenarios en los que habrían posibles ocurrencias
-    posibles_operaciones = [[datos.iloc[i,:] for i in range(len(datos)) 
-                             # Que la operación haya abierto antes que la ganadora y cerrado después de la ganadora
-                             if datos['opentime'][i] < df_gand['opentime'][k]  and                                  
+    # Con las operaciones ya ganadas, buscar las operaciones que pertenecen a los dos escenarios en los que habrían posibles ocurrenciasde operaciones abiertas al momento de cierre de las ganadoras
+    posibles_operaciones = [[datos.iloc[i,:] for i in range(len(datos))
+                             # Que la operación ganadora haya iniciado antes, y haya cerrado antes que la operación abierta y que la operación abierta haya cerrado después del momento de cierre de la operación ganadora
+                             if df_gand['closetime'][k] > datos['opentime'][i] > df_gand['opentime'][k] and
                              datos['closetime'][i] > df_gand['closetime'][k] or
-                             # Que la operación ganadora haya iniciado antes, y haya cerrado antes que la operación abierta
-                             df_gand['closetime'][k] > datos['opentime'][i] > df_gand['opentime'][k] and
-                             # Y que la operación abierta haya cerrado después del momento de cierre de la operación ganadora
+                             # Que la operación haya abierto antes que la ganadora Y cerrado después de la ganadora
+                             datos['opentime'][i] < df_gand['opentime'][k]  and                                  
                              datos['closetime'][i] > df_gand['closetime'][k]]
                              for k in range(len(df_gand))]
     
@@ -476,7 +474,7 @@ def f_be_de(datos):
     pos_ops = [pd.concat([df_gand.iloc[i, :], pd.concat(posibles_operaciones[i], axis = 1)], 
                          axis = 1, sort=False, ignore_index = True).T for i in range(len(posibles_operaciones)) if posibles_operaciones[i] != []]
     
-    # Se descargan los precios de cierre en una lista de acuerdo a la operación ancla (ganadora)
+    # Se descargan los precios de cierre en una lista de acuerdo a la operación ancla con la función de descarga de precios
     prices = [[f_prices(f_instrument(pos_ops[k]['symbol'][i+1]), pos_ops[k]['closetime'][0])
                for i in range(len(pos_ops[k]) - 1)] for k in range(len(pos_ops))]
     
@@ -490,7 +488,7 @@ def f_be_de(datos):
     # Se agrega la pérdida flotante
     for i in range(len(prices_pos_ops)): 
         prices_pos_ops[i]['perdida_flotante'] = (prices_pos_ops[i]['prices_on_close'] - prices_pos_ops[i]['openprice'])*(prices_pos_ops[i]['profit'] / (prices_pos_ops[i]['closeprice'] - prices_pos_ops[i]['openprice'])) 
-    # Se guarda la pérdida flotante y se toma la máxima          
+    # Se guarda la pérdida flotante tomando la máxima          
     for j in range(len(prices)):
         profits, indexes = [],  []
         for i in range(len(prices[j])):
@@ -501,7 +499,7 @@ def f_be_de(datos):
                 profits.append((prices_pos_ops [j]['perdida_flotante'][i+1]))
                 indexes.append(i+1)
         
-        # Se hace el cálculo de las ocurrencias 
+        # Se hace el cálculo de las ocurrencias con características requeridas
         if profits != []:
             indx = profits.index(min(profits))
             k +=1
@@ -511,16 +509,17 @@ def f_be_de(datos):
                                      'operaciones':
                                              {'ganadora':  
                                                     {'instrumento': pos_ops[j]['symbol'][0],
-                                                     'sentido': pos_ops[j]['type'][0],
                                                      'volumen': pos_ops[j]['size'][0],
+                                                     'sentido': pos_ops[j]['type'][0],
                                                      'capital_gand': pos_ops[j]['profit'][0],
                                                      'capital_acm': pos_ops[j]['capital_acm'][0]},  
                                                'perdedora':
                                                     {'instrumento': pos_ops[j]['symbol'][indexes[indx]],
-                                                     'sentido': pos_ops[j]['type'][indexes[indx]],
                                                      'volumen': pos_ops[j]['size'][indexes[indx]],
+                                                     'sentido': pos_ops[j]['type'][indexes[indx]],
                                                      'profit': pos_ops[j]['profit'][indexes[indx]],
                                                      'capital_perd': new_profits}},
+                                                 
                                       'ratio_cp_capital_acm': round(abs(new_profits/pos_ops[j]['capital_acm'][0])*100, 3),                                            
                                       'ratio_cg_capital_acm': round(abs(pos_ops[j]['profit'][0] / pos_ops[j]['capital_acm'][0])*100, 3),
                                       'ratio_cp_cg': round(abs(new_profits/pos_ops[j]['profit'][0]), 3)}})
@@ -538,10 +537,12 @@ def f_be_de(datos):
     results = pd.DataFrame([(len(data)), 
                             (len([1 for i in range(len(data)) if data.iloc[i,0] < data.iloc[i,1]]) / len(data)),
                             (len([1 for i in range(len(data)) if data.iloc[i,2] > 1.5]) / len(data)),
-                            ('Sí' if first_last.iloc[0,3] < first_last.iloc[1,3] and 
+                            ('Sí' if first_last.iloc[0,3] < first_last.iloc[1,3] and
                              first_last.iloc[1,2] > 1.5 and
-                             (first_last.iloc[0,0] < first_last.iloc[1,0] or 
-                             first_last.iloc[0,1] < first_last.iloc[1,1]) else 'No')]) 
+                             first_last.iloc[0,0] < first_last[1,0] or
+                             first_last.iloc[0,1] < first_last.iloc[1,1]
+                             else 'No')])
+        
     # Mergear los dataframes con nombres y resultados     
     f_results = pd.merge(names, results, left_index = True, right_index = True)
     f_results_c = f_results.rename(columns = {"0_x": "mediciones", "0_y": "resultados"})
