@@ -225,7 +225,6 @@ def f_profit_diario(datos):
      ---------
      datos = f_leer_archivo("archivo_tradeview_1.xlsx")
      """
-
      
      # Agregar normalize a closetime
      diario = pd.date_range(datos.closetime.min(), datos.closetime.max()).normalize()
@@ -384,20 +383,6 @@ def f_stats_mad(datos):
 #%% Parte 4: Sesgos cognitivos del trader
 #%%
 
-def f_fecha(date):
-    """
-    Parameters
-    ----------
-    date : fecha
-
-    Returns
-    -------
-    date : date en formato string
-
-    """
-    return str(date)[:10]
-
-
 def f_prices(param_ins, date):
     """
     Parameters
@@ -455,7 +440,6 @@ def f_be_de(datos):
     Parameters
     ----------
     datos : pd.DataFrame : Archivo original de las operaciones realizadas
-
     Returns
     -------
     pd.DataFrame : Archivo de operaciones
@@ -463,22 +447,28 @@ def f_be_de(datos):
     Debuggin
     --------
     datos = 'f_leer_archivo("archivo_tradeview_1.csv")
-
     """
     
     # Crear una nueva columna en el dataframe de datos con un ratio del profit por operación entre el capital acumulado
     # Únicamente el primer valor del profit se divide entre $5,000 por ser los $5,000 todo el capital hasta el momento
     datos['profit/cap (%)'] = [(datos['profit'][i]/5000)*100 if i == 0 else (datos['profit'][i]/datos['capital_acm'][i-1])*100 for i in range(len(datos['profit']))]
       
+    # Dataframe con operaciones perdedoras
+    df_perd= datos[datos['profit'] < 0]
+    df_perd.reset_index(inplace = True, drop = True)
+
     # Dataframe con operaciones ganadoras
     df_gand = datos[datos['profit'] > 0]
     df_gand.reset_index(inplace = True, drop = True)
     
     # Con las operaciones ya ganadas, buscar las operaciones que pertenecen a los cuatro escenarios en los que habrían posibles ocurrencias
     posibles_operaciones = [[datos.iloc[i,:] for i in range(len(datos)) 
-                             if datos['opentime'][i] < df_gand['opentime'][k]  and 
+                             # Que la operación haya abierto antes que la ganadora y cerrado después de la ganadora
+                             if datos['opentime'][i] < df_gand['opentime'][k]  and                                  
                              datos['closetime'][i] > df_gand['closetime'][k] or
+                             # Que la operación ganadora haya iniciado antes, y haya cerrado antes que la operación abierta
                              df_gand['closetime'][k] > datos['opentime'][i] > df_gand['opentime'][k] and
+                             # Y que la operación abierta haya cerrado después del momento de cierre de la operación ganadora
                              datos['closetime'][i] > df_gand['closetime'][k]]
                              for k in range(len(df_gand))]
     
@@ -497,11 +487,9 @@ def f_be_de(datos):
     # Llenar lista con Diccionarios
     ocurrencias = []
     k = 0
-    
     # Se agrega la pérdida flotante
     for i in range(len(prices_pos_ops)): 
         prices_pos_ops[i]['perdida_flotante'] = (prices_pos_ops[i]['prices_on_close'] - prices_pos_ops[i]['openprice'])*(prices_pos_ops[i]['profit'] / (prices_pos_ops[i]['closeprice'] - prices_pos_ops[i]['openprice'])) 
-        
     # Se guarda la pérdida flotante y se toma la máxima          
     for j in range(len(prices)):
         profits, indexes = [],  []
@@ -550,14 +538,13 @@ def f_be_de(datos):
     results = pd.DataFrame([(len(data)), 
                             (len([1 for i in range(len(data)) if data.iloc[i,0] < data.iloc[i,1]]) / len(data)),
                             (len([1 for i in range(len(data)) if data.iloc[i,2] > 1.5]) / len(data)),
-                            ('si' if first_last.iloc[0,3] < first_last.iloc[1,3] and 
+                            ('Sí' if first_last.iloc[0,3] < first_last.iloc[1,3] and 
                              first_last.iloc[1,2] > 1.5 and
                              (first_last.iloc[0,0] < first_last.iloc[1,0] or 
-                             first_last.iloc[0,1] < first_last.iloc[1,1]) else 'no')]) 
+                             first_last.iloc[0,1] < first_last.iloc[1,1]) else 'No')]) 
     # Mergear los dataframes con nombres y resultados     
     f_results = pd.merge(names, results, left_index = True, right_index = True)
     f_results_c = f_results.rename(columns = {"0_x": "mediciones", "0_y": "resultados"})
     
     # Entrega final de diccionario con la lista de ocurrencias y el dataframe de resultados del análisis de ocurrencias 
     return {'ocurrencias': ocurrencias, 'resultados': f_results_c}
-
