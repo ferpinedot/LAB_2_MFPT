@@ -520,9 +520,9 @@ def f_be_de(datos):
                                                      'profit': pos_ops[j]['profit'][indexes[indx]],
                                                      'capital_perd': new_profits}},
                                                  
-                                      'ratio_cp_capital_acm': round(abs(new_profits/pos_ops[j]['capital_acm'][0])*100, 3),                                            
-                                      'ratio_cg_capital_acm': round(abs(pos_ops[j]['profit'][0] / pos_ops[j]['capital_acm'][0])*100, 3),
-                                      'ratio_cp_cg': round(abs(new_profits/pos_ops[j]['profit'][0]), 3)}})
+                                      'ratio_cp_capital_acm': abs(new_profits/pos_ops[j]['capital_acm'][0])*100,                                            
+                                      'ratio_cg_capital_acm': abs(pos_ops[j]['profit'][0] / pos_ops[j]['capital_acm'][0])*100,
+                                      'ratio_cp_cg': abs(new_profits/pos_ops[j]['profit'][0])}})
            
     data = pd.concat([pd.DataFrame([ocurrencias[i-1]['ocurrencia %d'%i]['ratio_cp_capital_acm'],
                                     ocurrencias[i-1]['ocurrencia %d'%i]['ratio_cg_capital_acm'],
