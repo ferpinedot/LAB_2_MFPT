@@ -315,12 +315,10 @@ def f_stats_mad(datos):
     sortino_s = (rend_log_s.mean() - mar) / ((tdd_ss*2).mean())*0.5
     
     
-    
-    # DD y DU
+    # Drawdown
     where_row = profit_d.loc[profit_d['profit_acm_d'] == profit_d.profit_acm_d.min()]
     where_position = where_row.index.tolist()
     
-    # Drawdown
     prev_where = profit_d.loc[0:where_position[0]]
     where_max_prev = profit_d.loc[profit_d['profit_acm_d'] == prev_where.profit_acm_d.max()]
     where_min_prev = profit_d.loc[profit_d['profit_acm_d'] == prev_where.profit_acm_d.min()]
@@ -332,7 +330,10 @@ def f_stats_mad(datos):
     drawdown =  "{}, {}, ${:.2f}" .format(fecha_i_dd, fecha_f_dd, dd)
      
     # Drawup
-    foll_where = profit_d.loc[where_position[0]:]
+    where_row_up = profit_d.loc[profit_d['profit_acm_d'] == profit_d.profit_acm_d.max()]
+    where_position_up = where_row_up.index.tolist()
+    
+    foll_where = profit_d.loc[0:where_position_up[0]]
     where_max_foll = profit_d.loc[profit_d['profit_acm_d'] == foll_where.profit_acm_d.max()]
     where_min_foll = profit_d.loc[profit_d['profit_acm_d'] == foll_where.profit_acm_d.min()]
     max_du = where_max_foll.iloc[0]['profit_acm_d']
@@ -501,8 +502,8 @@ def f_be_de(datos):
         
         # Se hace el cálculo de las ocurrencias con características requeridas
         if profits != []:
-            indx = profits.index(min(profits))
             k +=1
+            indx = profits.index(min(profits))
             new_profits = round((prices_pos_ops[j]['prices_on_close'][indexes[indx]] - pos_ops[j]['openprice'][indexes[indx]]) * ((pos_ops[j]['profit'][indexes[indx]]) / (pos_ops[j]['closeprice'][indexes[indx]] - pos_ops[j]['openprice'][indexes[indx]])), 3)                            
             ocurrencias.append({'ocurrencia %d'%k:
                                     {'timestamp': pos_ops[j]['closetime'][0],
