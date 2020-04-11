@@ -45,7 +45,7 @@ desempeno = fn.f_stats_mad(datos)
 vn.profitd(datos)
 
 # Behavioral Finance, sesgos cognitivos
-sesgos = fn.f_sesgos_cognitivos(datos)
+sesgos = fn.f_be_de(datos)
 
 
 print(datos)

@@ -450,7 +450,7 @@ def f_instrument(ins):
     return ins.upper()[:3] + '_' + ins.upper()[3:]
 
 
-def f_sesgos_cognitivos(datos):
+def f_be_de(datos):
     """
     Parameters
     ----------
@@ -493,15 +493,15 @@ def f_sesgos_cognitivos(datos):
     # Lista de todas las posibles ocurrencias en formato dataframe
     prices_pos_ops = [pd.concat([pos_ops[i], pd.concat([pd.DataFrame([0], columns=['prices_on_close']), pd.DataFrame(prices[i], columns=['prices_on_close'])],
                                                        sort=False, ignore_index = True)], axis = 1, sort=False) for i in range(len(pos_ops))]
-                                     
-    # Se agrega la pérdida flotante
-    for i in range(len(prices_pos_ops)): 
-        prices_pos_ops[i]['perdida_flotante'] = (prices_pos_ops[i]['prices_on_close'] - prices_pos_ops[i]['openprice'])*(prices_pos_ops[i]['profit'] / (prices_pos_ops[i]['closeprice'] - prices_pos_ops[i]['openprice'])) 
-                
-        
+    
     # Llenar lista con Diccionarios
     ocurrencias = []
     k = 0
+    
+    # Se agrega la pérdida flotante
+    for i in range(len(prices_pos_ops)): 
+        prices_pos_ops[i]['perdida_flotante'] = (prices_pos_ops[i]['prices_on_close'] - prices_pos_ops[i]['openprice'])*(prices_pos_ops[i]['profit'] / (prices_pos_ops[i]['closeprice'] - prices_pos_ops[i]['openprice'])) 
+        
     # Se guarda la pérdida flotante y se toma la máxima          
     for j in range(len(prices)):
         profits, indexes = [],  []
@@ -510,12 +510,10 @@ def f_sesgos_cognitivos(datos):
                     i+1] and pos_ops[j]['type'][i+1] == 'buy' or prices[
                             j][i] > pos_ops[j]['openprice'][
                                     i+1] and pos_ops[j]['type'][i+1] == 'sell':   
-                # Guardar los profits tomando el máximo
                 profits.append((prices_pos_ops [j]['perdida_flotante'][i+1]))
-                # Guardar el indice del profit
                 indexes.append(i+1)
-        #print(profits, indices)
         
+        # Se hace el cálculo de las ocurrencias 
         if profits != []:
             indx = profits.index(min(profits))
             k +=1
@@ -547,7 +545,7 @@ def f_sesgos_cognitivos(datos):
 
     first_last = pd.concat([data.iloc[0,:], data.iloc[len(data)-1, :]], axis=1, ignore_index=True).transpose()
     
-    
+    # DataFrame de resultados de ocurrencias 
     names = pd.DataFrame(['ocurrencias', 'status_quo', 'aversión_pérdida', 'sensibilidad_decreciente'])
     results = pd.DataFrame([(len(data)), 
                             (len([1 for i in range(len(data)) if data.iloc[i,0] < data.iloc[i,1]]) / len(data)),
@@ -556,12 +554,10 @@ def f_sesgos_cognitivos(datos):
                              first_last.iloc[1,2] > 1.5 and
                              (first_last.iloc[0,0] < first_last.iloc[1,0] or 
                              first_last.iloc[0,1] < first_last.iloc[1,1]) else 'no')]) 
-    
+    # Mergear los dataframes con nombres y resultados     
     f_results = pd.merge(names, results, left_index = True, right_index = True)
     f_results_c = f_results.rename(columns = {"0_x": "mediciones", "0_y": "resultados"})
-
-
+    
+    # Entrega final de diccionario con la lista de ocurrencias y el dataframe de resultados del análisis de ocurrencias 
     return {'ocurrencias': ocurrencias, 'resultados': f_results_c}
-
-
 
