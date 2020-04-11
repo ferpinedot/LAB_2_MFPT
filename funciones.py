@@ -530,17 +530,17 @@ def f_be_de(datos):
                                     ocurrencias[i-1]['ocurrencia %d'%i]['operaciones']['ganadora']['capital_acm']])
                       for i in range(1, len(ocurrencias)+1)], axis=1, ignore_index = True).transpose()
 
-    first_last = pd.concat([data.iloc[0,:], data.iloc[len(data)-1, :]], axis=1, ignore_index=True).transpose()
+    data_c = pd.concat([data.iloc[0,:], data.iloc[len(data)-1, :]], axis=1, ignore_index=True).transpose()
     
     # DataFrame de resultados de ocurrencias 
     names = pd.DataFrame(['ocurrencias', 'status_quo', 'aversión_pérdida', 'sensibilidad_decreciente'])
     results = pd.DataFrame([(len(data)), 
                             (len([1 for i in range(len(data)) if data.iloc[i,0] < data.iloc[i,1]]) / len(data)),
                             (len([1 for i in range(len(data)) if data.iloc[i,2] > 1.5]) / len(data)),
-                            ('Sí' if first_last.iloc[0,3] < first_last.iloc[1,3] and
-                             first_last.iloc[1,2] > 1.5 and
-                             first_last.iloc[0,0] < first_last[1,0] or
-                             first_last.iloc[0,1] < first_last.iloc[1,1]
+                            ('Sí' if data_c.iloc[0,3] < data_c.iloc[1,3] and
+                             data_c.iloc[1,2] > 1.5 and
+                             data_c.iloc[0,0] < data_c[1,0] or
+                             data_c.iloc[0,1] < data_c.iloc[1,1]
                              else 'No')])
         
     # Mergear los dataframes con nombres y resultados     
