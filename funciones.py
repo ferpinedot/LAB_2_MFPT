@@ -454,8 +454,8 @@ def f_be_de(datos):
     datos['profit/cap (%)'] = [(datos['profit'][i]/5000)*100 if i == 0 else (datos['profit'][i]/datos['capital_acm'][i-1])*100 for i in range(len(datos['profit']))]
       
     # Dataframe con operaciones perdedoras
-    df_perd= datos[datos['profit'] < 0]
-    df_perd.reset_index(inplace = True, drop = True)
+    # df_perd= datos[datos['profit'] < 0]
+    # df_perd.reset_index(inplace = True, drop = True)
 
     # Dataframe con operaciones ganadoras
     df_gand = datos[datos['profit'] > 0]
@@ -507,30 +507,25 @@ def f_be_de(datos):
             new_profits = round((prices_pos_ops[j]['prices_on_close'][indexes[indx]] - pos_ops[j]['openprice'][indexes[indx]]) * ((pos_ops[j]['profit'][indexes[indx]]) / (pos_ops[j]['closeprice'][indexes[indx]] - pos_ops[j]['openprice'][indexes[indx]])), 3)                            
             ocurrencias.append({'ocurrencia %d'%k:
                                     {'timestamp': pos_ops[j]['closetime'][0],
-                                     'operaciones':
-                                             {'ganadora':  
-                                                    {'instrumento': pos_ops[j]['symbol'][0],
-                                                     'volumen': pos_ops[j]['size'][0],
-                                                     'sentido': pos_ops[j]['type'][0],
-                                                     'capital_gand': pos_ops[j]['profit'][0],
-                                                     'capital_acm': pos_ops[j]['capital_acm'][0]},  
-                                               'perdedora':
-                                                    {'instrumento': pos_ops[j]['symbol'][indexes[indx]],
-                                                     'volumen': pos_ops[j]['size'][indexes[indx]],
-                                                     'sentido': pos_ops[j]['type'][indexes[indx]],
-                                                     'profit': pos_ops[j]['profit'][indexes[indx]],
-                                                     'capital_perd': new_profits}},
-                                                 
-                                      'ratio_cp_capital_acm': abs(new_profits/pos_ops[j]['capital_acm'][0])*100,                                            
-                                      'ratio_cg_capital_acm': abs(pos_ops[j]['profit'][0] / pos_ops[j]['capital_acm'][0])*100,
-                                      'ratio_cp_cg': abs(new_profits/pos_ops[j]['profit'][0])}})
+                                     'operaciones': {'ganadora': {'instrumento': pos_ops[j]['symbol'][0],
+                                                                  'volumen': pos_ops[j]['size'][0],
+                                                                  'sentido': pos_ops[j]['type'][0],
+                                                                  'capital_gand': pos_ops[j]['profit'][0],
+                                                                  'capital_acm': pos_ops[j]['capital_acm'][0]},  
+                                                     'perdedora': {'instrumento': pos_ops[j]['symbol'][indexes[indx]],
+                                                                   'volumen': pos_ops[j]['size'][indexes[indx]],
+                                                                   'sentido': pos_ops[j]['type'][indexes[indx]],
+                                                                   'profit': pos_ops[j]['profit'][indexes[indx]],
+                                                                   'capital_perd': new_profits}},
+                                     'ratio_cp_capital_acm': abs(new_profits/pos_ops[j]['capital_acm'][0])*100,                                            
+                                     'ratio_cg_capital_acm': abs(pos_ops[j]['profit'][0] / pos_ops[j]['capital_acm'][0])*100,
+                                     'ratio_cp_cg': abs(new_profits/pos_ops[j]['profit'][0])}})
            
     data = pd.concat([pd.DataFrame([ocurrencias[i-1]['ocurrencia %d'%i]['ratio_cp_capital_acm'],
                                     ocurrencias[i-1]['ocurrencia %d'%i]['ratio_cg_capital_acm'],
                                     ocurrencias[i-1]['ocurrencia %d'%i]['ratio_cp_cg'],
                                     ocurrencias[i-1]['ocurrencia %d'%i]['operaciones']['ganadora']['capital_acm']])
                       for i in range(1, len(ocurrencias)+1)], axis=1, ignore_index = True).transpose()
-
     data_c = pd.concat([data.iloc[0,:], data.iloc[len(data)-1, :]], axis=1, ignore_index=True).transpose()
     
     # DataFrame de resultados de ocurrencias 
