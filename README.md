@@ -1,6 +1,7 @@
 # LAB_2_MFPT
 Behavioral Finance
 
+(El laboratorio de Jupyter se intentó subir dos veces, con py.offline.init_notebook_mode(connected = True) y py.offline.init_notebook_mode(connected = False), pero en ningún casi fue posible visualizar las gráficas en GitHub, sin embargo al abrir ambos notebooks, en la esquina superior derecha se abre un link para poder visualizarlo completo con todo y las gráficas de plotly en otra pestaña.)
 
 Este proyecto consiste principalmente en elaborar herramientas para el análisis del desempeño de la actividad de trading tanto por parte de la misma cuenta, dándose a entender de los movimientos de ésta, como del comportamiento del trader que la opera.
 Consiste en 4 partes o etapas, siendo la primera la estructura básica de la misma, la cual está compuesta por 8 elementos:
