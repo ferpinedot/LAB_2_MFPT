@@ -135,25 +135,60 @@ def profit_dd_du_line(profit_d):
 
 
 
-# def sesgos_graph(sesgos):
-#     """
-#     Parameters
-#     ----------
-#     sesgos : función : Función utilizada para calcular los sesgos cognitivos 
+sesgos = fn.f_be_de(datos)
 
-#     Returns
-#     -------
-#     graph : gráfica de barras representando valores porcentuales del status-quo y aversión al riesgo
+def sesgos_graph(sesgos):
+    """
+    Parameters
+    ----------
+    sesgos : función : Función utilizada para calcular los sesgos cognitivos 
 
-#     """
+    Returns
+    -------
+    graph : gráfica de barras representando valores porcentuales del status-quo y aversión al riesgo
+
+    """
     
-#     sesgos = fn.f_sesgos_cognitivos(datos)
-#     df_resultados = pd.DataFrame(sesgos['resultados'])
-#     df_results = df_resultados.drop([0, 3])
-#     sesgs_bar = go.Figure(data = [go.Bar(x = df_results['mediciones'], y = df_results['resultados'])])
-#     sesgs_bar.update_layout(title = "Disposition Effect", xaxis_title = "Mediciones", yaxis_title = "Resultados (%)")    
-#     sesgs_bar.show()
+    sesgos = fn.f_be_de(datos)
+    df_resultados = pd.DataFrame(sesgos['resultados'])
+    df_results = df_resultados.drop([0, 3])
+    sesgs_bar = go.Figure(data = [go.Bar(x = df_results['mediciones'], y = df_results['resultados'])])
+    sesgs_bar.update_layout(title = "Disposition Effect", xaxis_title = "Mediciones", yaxis_title = "Resultados (%)")    
+    #sesgs_bar.show()
+    py.iplot(sesgs_bar)
  
+    
+
+sesgos = fn.f_be_de(datos)
+
+def sesgos_graph_orig(sesgos):
+    """
+    Parameters
+    ----------
+    sesgos : función : Función utilizada para calcular los sesgos cognitivos 
+
+    Returns
+    -------
+    graph : gráfica de barras representando el número de veces de cada medición del total de ocurrencias 
+
+    """
+    
+    df_resultados = pd.DataFrame(sesgos['resultados'])
+    sq = df_resultados['resultados'].iloc[1] * df_resultados['resultados'].iloc[0]
+    ap = df_resultados['resultados'].iloc[2] * df_resultados['resultados'].iloc[0]
+    sd = 0
+    
+    results_graph = pd.DataFrame({'Status_quo': [sq], 'Aversion_perd': [ap], 'Sens_decreciente': [sd]}, index = ['Número de ocurrencias']).transpose()
+    results_graph_ = results_graph.reset_index()
+    results_graph_c = results_graph_.rename(columns = {"index": "Mediciones"})
+    
+    sesgs_num = go.Figure(data = [go.Bar(x = results_graph_c['Mediciones'], y = results_graph_c['Número de ocurrencias'])])   
+    sesgs_num.update_layout(title = 'Número de ocurrencias por medición', xaxis_title = "Mediciones", yaxis_title = "Número de ocurrencias")
+    py.iplot(sesgs_num)
+    
+    
+    
+
         
     
     
